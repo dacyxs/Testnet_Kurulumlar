@@ -106,44 +106,8 @@ sed -i -e "s/^pruning-keep-recent *=.*/pruning-keep-recent = \"$pruning_keep_rec
 sed -i -e "s/^pruning-keep-every *=.*/pruning-keep-every = \"$pruning_keep_every\"/" $HOME/.kujira/config/app.toml
 sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"$pruning_interval\"/" $HOME/.kujira/config/app.toml
 
-sleep 1
-
-#Change port 34
-sed -i.bak -e "s%^proxy_app = \"tcp://127.0.0.1:26658\"%proxy_app = \"tcp://127.0.0.1:36348\"%; s%^laddr = \"tcp://127.0.0.1:26657\"%laddr = \"tcp://127.0.0.1:36347\"%; s%^pprof_laddr = \"localhost:6060\"%pprof_laddr = \"localhost:6341\"%; s%^laddr = \"tcp://0.0.0.0:26656\"%laddr = \"tcp://0.0.0.0:36346\"%; s%^prometheus_listen_addr = \":26660\"%prometheus_listen_addr = \":36340\"%" $HOME/.kujira/config/config.toml
-sed -i.bak -e "s%^address = \"0.0.0.0:9090\"%address = \"0.0.0.0:9340\"%; s%^address = \"0.0.0.0:9091\"%address = \"0.0.0.0:9341\"%" $HOME/.kujira/config/app.toml
-sed -i.bak -e "s%^node = \"tcp://localhost:26657\"%node = \"tcp://localhost:36347\"%" $HOME/.kujira/config/client.toml
-external_address=$(wget -qO- eth0.me)
-sed -i.bak -e "s/^external_address *=.*/external_address = \"$external_address:36346\"/" $HOME/.kujira/config/config.toml
-
 sleep 1 
 
 # reset
 kujirad tendermint unsafe-reset-all
 
-echo -e "\e[1m\e[32m4. Servisler baslatiliyor... \e[0m" && sleep 1
-# create service
-tee $HOME/kujirad.service > /dev/null <<EOF
-[Unit]
-Description=kujirad
-After=network.target
-[Service]
-Type=simple
-User=$USER
-ExecStart=$(which kujirad) start
-Restart=on-failure
-RestartSec=10
-LimitNOFILE=65535
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo mv $HOME/kujirad.service /etc/systemd/system/
-
-# start service
-sudo systemctl daemon-reload
-sudo systemctl enable kujirad
-sudo systemctl restart kujirad
-
-echo '=============== KURULUM BASARIYLA TAMAMLANDI ==================='
-echo -e 'Loglari kontrol et: \e[1m\e[32mjournalctl -ujournalctl -u kujirad -f -o cat\e[0m'
-echo -e 'Senkronizasyon durumu kontrol et: \e[1m\e[32mcurl -s localhost:26657/status | jq .result.sync_info\e[0m'
